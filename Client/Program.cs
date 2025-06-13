@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Настройка подключения к базе данных
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Host=localhost;Database=expense_tracker;Username=postgres;Password=zasada1324";
+    ?? "Host=localhost;Database=expense_tracker;Username=postgres;Password=";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
