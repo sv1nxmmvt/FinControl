@@ -1,0 +1,241 @@
+﻿@page "/expenses"
+@inject ICategoryService CategoryService
+@inject IExpenseService ExpenseService
+@inject NavigationManager Navigation
+@inject IHttpContextAccessor HttpContextAccessor
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+@using ExpenseTracker.Services
+@using ExpenseTracker.Models
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using System.Security.Claims
+@attribute [Authorize]
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Мои расходы</h2>
+    <div>
+        <a href="/reports" class="btn btn-info me-2">Отчеты</a>
+        <button @onclick="Logout" class="btn btn-outline-secondary">Выйти</button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Добавить расход</div>
+            <div class="card-body">
+                <EditForm Model="expenseModel" OnValidSubmit="AddExpense" FormName="ExpenseForm">
+                    <DataAnnotationsValidator />
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">Категория</label>
+                        <InputSelect @bind-Value="expenseModel.CategoryId" class="form-select">
+                            <option value="">Выберите категорию</option>
+                            @foreach (var category in categories)
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => expenseModel.CategoryId" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Сумма (BYN)</label>
+                        <InputNumber @bind-Value="expenseModel.Amount" class="form-control" step="0.01" />
+                        <ValidationMessage For="() => expenseModel.Amount" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Добавить
+                    </button>
+                </EditForm>
+
+                <hr />
+
+                <div class="mb-3">
+                    <input @bind="newCategoryName" class="form-control" placeholder="Новая категория" />
+                </div>
+                <button @onclick="AddCategory" class="btn btn-secondary w-100" disabled="@(isLoading || string.IsNullOrWhiteSpace(newCategoryName))">
+                    Создать категорию
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">История расходов</div>
+            <div class="card-body">
+                @if (expenses.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Категория</th>
+                                    <th class="text-end">Сумма</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var expense in expenses)
+                                {
+                                    <tr>
+                                        <td>@expense.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                        <td>@expense.CategoryName</td>
+                                        <td class="text-end">@expense.Amount.ToString("F2") BYN</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">Пока нет расходов</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<CategoryDto> categories = new();
+    private List<ExpenseDto> expenses = new();
+    private ExpenseModel expenseModel = new();
+    private string newCategoryName = "";
+    private string errorMessage = "";
+    private bool isLoading = false;
+    private Guid currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext?.User?.Identity?.IsAuthenticated != true)
+        {
+            Navigation.NavigateTo("/", true);
+            return;
+        }
+
+        // Получаем ID текущего пользователя
+        var userIdClaim = httpContext.User.FindFirst("UserId")?.Value;
+        if (userIdClaim == null)
+        {
+            Navigation.NavigateTo("/", true);
+            return;
+        }
+
+        currentUserId = Guid.Parse(userIdClaim);
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            categories = await CategoryService.GetCategoriesAsync(currentUserId);
+            expenses = await ExpenseService.GetExpensesAsync(currentUserId);
+        }
+        catch (Exception)
+        {
+            Navigation.NavigateTo("/", true);
+        }
+    }
+
+    private async Task AddExpense()
+    {
+        isLoading = true;
+        errorMessage = "";
+
+        try
+        {
+            var result = await ExpenseService.CreateExpenseAsync(currentUserId, expenseModel.CategoryId, expenseModel.Amount);
+
+            if (result.Success)
+            {
+                expenseModel = new();
+                await LoadData();
+            }
+            else
+            {
+                errorMessage = result.Error;
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Ошибка при добавлении расхода";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task AddCategory()
+    {
+        if (string.IsNullOrWhiteSpace(newCategoryName)) return;
+
+        isLoading = true;
+        errorMessage = "";
+
+        try
+        {
+            var result = await CategoryService.CreateCategoryAsync(currentUserId, newCategoryName.Trim());
+
+            if (result.Success)
+            {
+                newCategoryName = "";
+                await LoadData();
+            }
+            else
+            {
+                errorMessage = result.Error;
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Ошибка при создании категории";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception)
+        {
+            Navigation.NavigateTo("/", true);
+        }
+    }
+
+    public class ExpenseModel
+    {
+        [Required(ErrorMessage = "Выберите категорию")]
+        public Guid CategoryId { get; set; }
+
+        [Required(ErrorMessage = "Укажите сумму")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Сумма должна быть больше нуля")]
+        public decimal Amount { get; set; }
+    }
+}

@@ -1,0 +1,153 @@
+﻿@page "/reports"
+@inject IExpenseService ExpenseService  
+@inject NavigationManager Navigation
+@inject IHttpContextAccessor HttpContextAccessor
+@rendermode InteractiveServer
+@using ExpenseTracker.Services
+@using ExpenseTracker.Models
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using System.Security.Claims
+@attribute [Authorize]
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Отчет по расходам</h2>
+    <div>
+        <a href="/expenses" class="btn btn-primary me-2">Назад к расходам</a>
+        <button @onclick="Logout" class="btn btn-outline-secondary">Выйти</button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">Расходы по категориям</div>
+            <div class="card-body">
+                @if (report.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Категория</th>
+                                    <th class="text-end">Общая сумма</th>
+                                    <th class="text-end">Процент</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in report)
+                                {
+                                    <tr>
+                                        <td>@item.CategoryName</td>
+                                        <td class="text-end">@item.TotalAmount.ToString("F2") BYN</td>
+                                        <td class="text-end">@GetPercentage(item.TotalAmount).ToString("F1")%</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-dark">
+                                    <th>Итого</th>
+                                    <th class="text-end">@totalAmount.ToString("F2") BYN</th>
+                                    <th class="text-end">100%</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="mt-4">
+                        <h5>Визуализация</h5>
+                        @foreach (var item in report)
+                        {
+                            var percentage = GetPercentage(item.TotalAmount);
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>@item.CategoryName</span>
+                                    <span>@item.TotalAmount.ToString("F2") BYN (@percentage.ToString("F1")%)</span>
+                                </div>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                         style="width: @percentage%"
+                                         aria-valuenow="@percentage" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        @if (percentage > 10)
+                                        {
+                                            <span class="text-white">@percentage.ToString("F1")%</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-pie-chart display-1 text-muted"></i>
+                        <p class="text-muted mt-3">Нет данных для отчета</p>
+                        <a href="/expenses" class="btn btn-primary">Добавить первый расход</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ReportDto> report = new();
+    private decimal totalAmount = 0;
+    private Guid currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        if (httpContext?.User?.Identity?.IsAuthenticated != true)
+        {
+            Navigation.NavigateTo("/", true);
+            return;
+        }
+
+        // Получаем ID текущего пользователя
+        var userIdClaim = httpContext.User.FindFirst("UserId")?.Value;
+        if (userIdClaim == null)
+        {
+            Navigation.NavigateTo("/", true);
+            return;
+        }
+
+        currentUserId = Guid.Parse(userIdClaim);
+
+        try
+        {
+            report = await ExpenseService.GetReportAsync(currentUserId);
+            totalAmount = report.Sum(r => r.TotalAmount);
+        }
+        catch (Exception)
+        {
+            Navigation.NavigateTo("/", true);
+        }
+    }
+
+    private decimal GetPercentage(decimal amount)
+    {
+        if (totalAmount == 0) return 0;
+        return Math.Round((amount / totalAmount) * 100, 1);
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception)
+        {
+            Navigation.NavigateTo("/", true);
+        }
+    }
+}

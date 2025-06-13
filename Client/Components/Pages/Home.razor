@@ -1,0 +1,206 @@
+﻿@page "/"
+@inject IUserService UserService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+@using ExpenseTracker.Services
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using System.Security.Claims
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                        <button class="nav-link @(isLogin ? "active" : "")" @onclick="SwitchToLogin" type="button">Вход</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link @(!isLogin ? "active" : "")" @onclick="SwitchToRegister" type="button">Регистрация</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                @if (isLogin)
+                {
+                    <EditForm Model="loginModel" OnValidSubmit="HandleLogin" FormName="LoginForm">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">@errorMessage</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Логин</label>
+                            <InputText @bind-Value="loginModel.Login" class="form-control" />
+                            <ValidationMessage For="() => loginModel.Login" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Пароль</label>
+                            <InputText type="password" @bind-Value="loginModel.Password" class="form-control" />
+                            <ValidationMessage For="() => loginModel.Password" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            Войти
+                        </button>
+                    </EditForm>
+                }
+                else
+                {
+                    <EditForm Model="registerModel" OnValidSubmit="HandleRegister" FormName="RegisterForm">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">@errorMessage</div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(successMessage))
+                        {
+                            <div class="alert alert-success">@successMessage</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Логин</label>
+                            <InputText @bind-Value="registerModel.Login" class="form-control" />
+                            <ValidationMessage For="() => registerModel.Login" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Пароль</label>
+                            <InputText type="password" @bind-Value="registerModel.Password" class="form-control" />
+                            <ValidationMessage For="() => registerModel.Password" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            Зарегистрироваться
+                        </button>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLogin = true;
+    private bool isLoading = false;
+    private string errorMessage = "";
+    private string successMessage = "";
+    private AuthModel loginModel = new();
+    private AuthModel registerModel = new();
+
+    protected override void OnInitialized()
+    {
+        // Инициализируем модели при загрузке компонента
+        loginModel = new AuthModel();
+        registerModel = new AuthModel();
+    }
+
+    private void SwitchToLogin()
+    {
+        isLogin = true;
+        errorMessage = "";
+        successMessage = "";
+        loginModel = new AuthModel();
+    }
+
+    private void SwitchToRegister()
+    {
+        isLogin = false;
+        errorMessage = "";
+        successMessage = "";
+        registerModel = new AuthModel();
+    }
+
+    private async Task HandleLogin()
+    {
+        if (loginModel == null) return;
+
+        isLoading = true;
+        errorMessage = "";
+        successMessage = "";
+
+        try
+        {
+            var result = await UserService.LoginAsync(loginModel.Login, loginModel.Password);
+            if (result.Success && result.Principal != null)
+            {
+                // Используем HttpContext из DI вместо cascading parameter
+                var httpContextAccessor = Navigation.ToAbsoluteUri("/").ToString();
+
+                // Перенаправляем на страницу входа через API
+                Navigation.NavigateTo($"/api/login?login={Uri.EscapeDataString(loginModel.Login)}&password={Uri.EscapeDataString(loginModel.Password)}", true);
+            }
+            else
+            {
+                errorMessage = result.Error ?? "Ошибка входа";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Произошла ошибка: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        if (registerModel == null) return;
+
+        isLoading = true;
+        errorMessage = "";
+        successMessage = "";
+
+        try
+        {
+            var result = await UserService.RegisterAsync(registerModel.Login, registerModel.Password);
+            if (result.Success)
+            {
+                successMessage = "Регистрация успешна! Теперь войдите в систему.";
+                isLogin = true;
+                loginModel = new AuthModel();
+            }
+            else
+            {
+                errorMessage = result.Error ?? "Ошибка регистрации";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Произошла ошибка: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class AuthModel
+    {
+        [Required(ErrorMessage = "Логин обязателен")]
+        public string Login { get; set; } = "";
+
+        [Required(ErrorMessage = "Пароль обязателен")]
+        [MinLength(6, ErrorMessage = "Пароль должен содержать минимум 6 символов")]
+        public string Password { get; set; } = "";
+    }
+}
