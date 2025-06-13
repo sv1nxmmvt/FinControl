@@ -1,6 +1,6 @@
-using ExpenseTracker.Data;
-using ExpenseTracker.Services;
-using Server.Components;
+using Server.Data;
+using Server.Services;
+using FinControl.Components;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +10,7 @@ using Server.Logic.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Host=localhost;Database=expense_tracker;Username=postgres;Password=";
+    ?? "Host=localhost;Database=expense_tracker;Username=postgres;Password=zasada1324";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));

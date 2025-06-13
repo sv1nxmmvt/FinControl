@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 
-namespace ExpenseTracker.Data;
+namespace Server.Data;
 
 public class AppDbContext : DbContext
 {

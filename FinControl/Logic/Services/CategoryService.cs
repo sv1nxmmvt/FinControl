@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ExpenseTracker.Data;
+using Server.Data;
 using Server.Data.DTO;
 using Server.Data.Models;
 using Server.Logic.Interfaces;

@@ -2,8 +2,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using ExpenseTracker.Data;
-using ExpenseTracker.Models;
+using Server.Data;
 using Server.Data.Models;
 using Server.Logic.Interfaces;
 
