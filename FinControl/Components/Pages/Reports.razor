@@ -3,11 +3,13 @@
 @inject NavigationManager Navigation
 @inject IHttpContextAccessor HttpContextAccessor
 @rendermode InteractiveServer
-@using ExpenseTracker.Services
+@using System.Security.Claims
 @using ExpenseTracker.Models
+@using ExpenseTracker.Services
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
-@using System.Security.Claims
+@using Server.Data.DTO
+@using Server.Logic.Interfaces
 @attribute [Authorize]
 
 <div class="d-flex justify-content-between align-items-center mb-4">

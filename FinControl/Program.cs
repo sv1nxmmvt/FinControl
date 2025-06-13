@@ -1,9 +1,11 @@
 using ExpenseTracker.Data;
 using ExpenseTracker.Services;
-using Client.Components;
+using Server.Components;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Server.Logic.Interfaces;
+using Server.Logic.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

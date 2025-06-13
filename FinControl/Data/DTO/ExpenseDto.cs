@@ -1,4 +1,4 @@
-﻿namespace ExpenseTracker.Models;
+﻿namespace Server.Data.DTO;
 
 public class ExpenseDto
 {

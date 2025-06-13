@@ -1,4 +1,4 @@
-﻿using ExpenseTracker.Models;
+﻿using Server.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Reflection.Emit;

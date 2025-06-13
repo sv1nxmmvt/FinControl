@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ExpenseTracker.Models;
+namespace Server.Data.Models;
 
 public class Expense
 {

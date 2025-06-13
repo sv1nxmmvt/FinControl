@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ExpenseTracker.Models;
+namespace Server.Data.Models;
 
 public class Category
 {

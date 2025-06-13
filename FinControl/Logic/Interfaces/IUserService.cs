@@ -1,6 +1,6 @@
-﻿using ExpenseTracker.Models;
+﻿using Server.Data.Models;
 
-namespace ExpenseTracker.Services;
+namespace Server.Logic.Interfaces;
 
 public interface IUserService
 {

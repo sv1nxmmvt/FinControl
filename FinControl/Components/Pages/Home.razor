@@ -4,10 +4,11 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 @using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
 @using ExpenseTracker.Services
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
-@using System.Security.Claims
+@using Server.Logic.Interfaces
 
 <div class="row justify-content-center">
     <div class="col-md-6">

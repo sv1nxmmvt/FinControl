@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ExpenseTracker.Data;
-using ExpenseTracker.Models;
+using Server.Data.DTO;
+using Server.Data.Models;
+using Server.Logic.Interfaces;
 
 namespace ExpenseTracker.Services;
 

@@ -1,4 +1,4 @@
-﻿namespace ExpenseTracker.Models;
+﻿namespace Server.Data.Models;
 
 public class ServiceResult
 {
