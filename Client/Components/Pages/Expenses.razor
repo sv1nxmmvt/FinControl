@@ -127,7 +127,6 @@
             return;
         }
 
-        // Получаем ID текущего пользователя
         var userIdClaim = httpContext.User.FindFirst("UserId")?.Value;
         if (userIdClaim == null)
         {

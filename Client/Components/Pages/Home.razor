@@ -107,7 +107,6 @@
 
     protected override void OnInitialized()
     {
-        // Инициализируем модели при загрузке компонента
         loginModel = new AuthModel();
         registerModel = new AuthModel();
     }
@@ -141,10 +140,8 @@
             var result = await UserService.LoginAsync(loginModel.Login, loginModel.Password);
             if (result.Success && result.Principal != null)
             {
-                // Используем HttpContext из DI вместо cascading parameter
                 var httpContextAccessor = Navigation.ToAbsoluteUri("/").ToString();
 
-                // Перенаправляем на страницу входа через API
                 Navigation.NavigateTo($"/api/login?login={Uri.EscapeDataString(loginModel.Login)}&password={Uri.EscapeDataString(loginModel.Password)}", true);
             }
             else

@@ -7,14 +7,12 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Настройка подключения к базе данных
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Host=localhost;Database=expense_tracker;Username=postgres;Password=";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Настройка аутентификации
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -27,28 +25,23 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
-// Регистрация сервисов
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 
-// Добавляем HttpContextAccessor для доступа к HttpContext в компонентах
 builder.Services.AddHttpContextAccessor();
 
-// Добавление Blazor Server
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 var app = builder.Build();
 
-// Создание базы данных при запуске
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await context.Database.EnsureCreatedAsync();
 }
 
-// Настройка pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -62,7 +55,6 @@ app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// API endpoint для входа (оставляем как есть, так как не конфликтует)
 app.MapGet("/api/login", async (string login, string password, IUserService userService, HttpContext context) =>
 {
     var result = await userService.LoginAsync(login, password);
@@ -75,7 +67,6 @@ app.MapGet("/api/login", async (string login, string password, IUserService user
     context.Response.Redirect("/?error=" + Uri.EscapeDataString(result.Error ?? "Ошибка входа"));
 });
 
-// API endpoints - добавляем префикс /api/ для всех API маршрутов
 app.MapPost("/api/register", async (RegisterRequest request, IUserService userService) =>
 {
     var result = await userService.RegisterAsync(request.Login, request.Password);
@@ -144,13 +135,7 @@ app.MapGet("/api/report", async (IExpenseService expenseService, HttpContext con
     return Results.Ok(report);
 }).RequireAuthorization();
 
-// Настройка Blazor компонентов - важно добавить это в конце
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
-
-public record RegisterRequest(string Login, string Password);
-public record LoginRequest(string Login, string Password);
-public record CreateCategoryRequest(string Name);
-public record CreateExpenseRequest(Guid CategoryId, decimal Amount);

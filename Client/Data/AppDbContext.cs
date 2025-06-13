@@ -17,7 +17,6 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Настройка User
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -26,7 +25,6 @@ public class AppDbContext : DbContext
             entity.Property(e => e.PasswordHash).IsRequired();
         });
 
-        // Настройка Category
         modelBuilder.Entity<Category>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -38,7 +36,6 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Настройка Expense
         modelBuilder.Entity<Expense>(entity =>
         {
             entity.HasKey(e => e.Id);

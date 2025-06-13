@@ -1,0 +1,1 @@
+public record CreateExpenseRequest(Guid CategoryId, decimal Amount);
